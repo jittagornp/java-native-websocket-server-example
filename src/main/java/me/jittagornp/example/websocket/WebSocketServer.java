@@ -112,7 +112,13 @@ public class WebSocketServer {
                             readByteBuffer.clear();
 
                             //Read data / Write data from channel to byteBuffer
-                            final int status = clientChannel.read(readByteBuffer);
+                            int status = 0;
+                            try {
+                                status = clientChannel.read(readByteBuffer);
+                            } catch (final IOException e) {
+                                onError(webSocket, e);
+                            }
+
                             if (status <= 0) {
                                 break;
                             }
