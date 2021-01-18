@@ -237,10 +237,21 @@ public class WebSocketServer {
         webSocketHandlers.stream()
                 .forEach(handler -> {
 
-                    if (opcode == Opcode.TEXT_FRAME && (handler instanceof TextWebSocketHandler)) {
+                    if (opcode == Opcode.CONNECTION_CODE) {
                         try {
-                            final String message = new String(byteBuffer.array(), StandardCharsets.UTF_8);
-                            handler.onMessage(webSocket, message);
+                            webSocket.getChannel().close();
+                            handler.onDisconnect(webSocket);
+                        } catch (final Throwable e) {
+                            handleError(handler, webSocket, e);
+                        }
+                    } else if (opcode == Opcode.TEXT_FRAME) {
+                        try {
+                            if (handler instanceof TextWebSocketHandler) {
+                                final String message = new String(byteBuffer.array(), StandardCharsets.UTF_8);
+                                handler.onMessage(webSocket, message);
+                            } else {
+                                handler.onMessage(webSocket, byteBuffer);
+                            }
                         } catch (final Throwable e) {
                             handleError(handler, webSocket, e);
                         }
