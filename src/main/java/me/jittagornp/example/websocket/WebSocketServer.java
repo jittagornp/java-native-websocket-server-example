@@ -72,7 +72,7 @@ public class WebSocketServer {
         serverSocketChannel.configureBlocking(false);
         serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
 
-        //4. Event loop for monitor channels
+        //3. Event loop for monitor channels
         while (true) {
             final int readyChannels = selector.selectNow();
             if (readyChannels > 0) {
