@@ -58,7 +58,7 @@ public class MultipleWebSocketHandler implements WebSocketHandler<FrameData> {
     private void handleMessage(final WebSocketHandler handler, final WebSocket webSocket, final FrameData frameData) {
         final Opcode opcode = frameData.getOpcode();
         System.out.println("opcode : " + opcode);
-        if (opcode == Opcode.CONNECTION_CODE) {
+        if (opcode == Opcode.CONNECTION_CLOSE) {
             handleConnectionCloseFrame(handler, webSocket, frameData);
         } else if (opcode == Opcode.TEXT_FRAME) {
             handleTextFrame(handler, webSocket, frameData);
