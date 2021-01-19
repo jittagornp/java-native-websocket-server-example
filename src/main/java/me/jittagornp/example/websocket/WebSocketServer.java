@@ -4,6 +4,7 @@
 package me.jittagornp.example.websocket;
 
 import me.jittagornp.example.util.ByteBufferUtils;
+
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
@@ -89,14 +90,14 @@ public class WebSocketServer {
                     if (key.isAcceptable()) {
 
                         final SocketChannel channel = serverSocketChannel.accept();
-                        final WebSocket webSocket = new WebSocket(channel);
+                        final WebSocketImpl webSocket = new WebSocketImpl(channel);
 
                         channel.configureBlocking(false);
                         channel.register(selector, SelectionKey.OP_READ, webSocket);
 
                     } else if (key.isReadable()) {
 
-                        final WebSocket webSocket = (WebSocket) key.attachment();
+                        final WebSocketImpl webSocket = (WebSocketImpl) key.attachment();
                         if (webSocket == null) {
                             key.cancel();
                         }
@@ -132,7 +133,7 @@ public class WebSocketServer {
         }
     }
 
-    private void doHandShake(final String secWebSocketKey, final WebSocket webSocket) throws IOException, NoSuchAlgorithmException {
+    private void doHandShake(final String secWebSocketKey, final WebSocketImpl webSocket) throws IOException, NoSuchAlgorithmException {
 
         if (secWebSocketKey == null) {
             return;
