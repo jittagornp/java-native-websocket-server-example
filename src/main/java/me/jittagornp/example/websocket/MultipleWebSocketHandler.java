@@ -1,9 +1,15 @@
+/*
+ * Copyright 2021-Current jittagornp.me
+ */
 package me.jittagornp.example.websocket;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+/**
+ * @author jitta
+ */
 public class MultipleWebSocketHandler implements WebSocketHandler<FrameData> {
 
     private final List<WebSocketHandler> handlers;
