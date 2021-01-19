@@ -45,14 +45,7 @@ public class MultipleWebSocketHandler implements WebSocketHandler<FrameData> {
     @Override
     public void onDisconnect(final WebSocket webSocket) {
         handlers.stream()
-                .forEach(handler -> {
-                    try {
-                        webSocket.getChannel().close();
-                        handler.onDisconnect(webSocket);
-                    } catch (final IOException e) {
-                        handleError(handler, webSocket, e);
-                    }
-                });
+                .forEach(handler -> handleConnectionClose(handler, webSocket, null));
     }
 
     private void handleError(final WebSocketHandler handler, final WebSocket webSocket, final Throwable e) {
