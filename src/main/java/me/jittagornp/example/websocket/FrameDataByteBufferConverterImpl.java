@@ -7,6 +7,7 @@ import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Random;
+
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -18,22 +19,22 @@ public class FrameDataByteBufferConverterImpl implements FrameDataByteBufferConv
     private static final byte FIN_BITS = (byte) 0b10000000;
 
     //0100 0000
-    private final byte RSV1_BITS = (byte) 0b01000000;
+    private static final byte RSV1_BITS = (byte) 0b01000000;
 
     //0010 0000
-    private final byte RSV2_BITS = (byte) 0b00100000;
+    private static final byte RSV2_BITS = (byte) 0b00100000;
 
     //0001 0000
-    private final byte RSV3_BITS = (byte) 0b00010000;
+    private static final byte RSV3_BITS = (byte) 0b00010000;
 
     //0000 1111
-    private final byte OPCODE_BITS = (byte) 0b00001111;
+    private static final byte OPCODE_BITS = (byte) 0b00001111;
 
     //1000 0000
-    private final byte MASK_BITS = (byte) 0b10000000;
+    private static final byte MASK_BITS = (byte) 0b10000000;
 
     //0111 1111
-    final byte PAYLOAD_LENGTH_BITS = (byte) 0b01111111;
+    private static final byte PAYLOAD_LENGTH_BITS = (byte) 0b01111111;
 
     private final Random random = new Random();
 
@@ -180,9 +181,9 @@ public class FrameDataByteBufferConverterImpl implements FrameDataByteBufferConv
         //==========================================
         //Masking-key:  0 or 4 bytes
         if (frameData.isMask()) {
-            final ByteBuffer maskingKey = ByteBuffer.allocate(4);
-            maskingKey.putInt(random.nextInt());
+            final ByteBuffer maskingKey = randomMaskingKey();
             frameBuffer.put(maskingKey.array());
+
             //XOR
             for (int i = 0; payloadData.hasRemaining(); i++) {
                 final byte encoded = (byte) (payloadData.get() ^ maskingKey.get(i % 4));
@@ -193,6 +194,12 @@ public class FrameDataByteBufferConverterImpl implements FrameDataByteBufferConv
         }
 
         return frameBuffer;
+    }
+
+    private ByteBuffer randomMaskingKey() {
+        final ByteBuffer maskingKey = ByteBuffer.allocate(4);
+        maskingKey.putInt(random.nextInt());
+        return maskingKey;
     }
 
     private ByteBuffer buildPayloadLengthByteBuffer(final int length, final byte maskBits) {
