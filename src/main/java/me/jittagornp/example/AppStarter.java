@@ -26,7 +26,7 @@ public class AppStarter {
 
             @Override
             public void onMessage(final WebSocket webSocket, final String message) {
-                System.out.println("Client Message => " + message);
+                System.out.println("Client message => " + message);
                 webSocket.send("Server reply : " + message);
             }
 
