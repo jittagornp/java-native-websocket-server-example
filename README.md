@@ -10,7 +10,7 @@
  
  ![](./running.png?v=1)
 
-จากนั้นให้เขียน WebSocketClient เชื่อมต่อมาที่ `ws://localhost` เพื่อลองทดสอบดู
+จากนั้นให้เขียน WebSocket Client เชื่อมต่อมาที่ `ws://localhost` เพื่อลองทดสอบดู
 
 ```html
 <script type="text/javascript">
@@ -37,3 +37,5 @@
     ...
 </script>
 ```
+
+สามารถดูตัวอย่างการเขียน WebSocket Client ได้จากไฟล์ [index.html](./index.html)
