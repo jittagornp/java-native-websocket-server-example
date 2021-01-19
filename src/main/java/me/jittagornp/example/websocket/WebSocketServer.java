@@ -104,6 +104,7 @@ public class WebSocketServer {
                         final SocketChannel channel = webSocket.getChannel();
                         if (channel == null) {
                             key.cancel();
+                            System.out.println("Lost connection.");
                             handler.onDisconnect(webSocket);
                         }
 

@@ -33,7 +33,7 @@ public enum Opcode {
     CONTINUATION_FRAME((byte) 0b00000000),
     TEXT_FRAME((byte) 0b00000001),
     BINARY_FRAME((byte) 0b00000010),
-    CONNECTION_CODE((byte) 0b00001000),
+    CONNECTION_CLOSE((byte) 0b00001000),
     PING((byte) 0b00001001),
     PONG((byte) 0b00001010);
 
