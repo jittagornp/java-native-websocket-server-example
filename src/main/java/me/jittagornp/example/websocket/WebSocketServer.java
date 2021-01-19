@@ -115,6 +115,7 @@ public class WebSocketServer {
 
                             //Change to Read mode
                             buffer.flip();
+
                         } catch (final IOException e) {
                             handler.onError(webSocket, e);
                         }

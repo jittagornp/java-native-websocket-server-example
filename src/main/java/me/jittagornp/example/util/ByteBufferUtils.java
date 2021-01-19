@@ -73,10 +73,8 @@ public class ByteBufferUtils {
         }
 
         final int totalSize = byteBuffers.stream()
-                .map(buffer -> {
-                    buffer.flip();
-                    return buffer;
-                }).mapToInt(ByteBuffer::remaining)
+                .map(ByteBuffer::flip)
+                .mapToInt(ByteBuffer::remaining)
                 .sum();
 
         if (totalSize == 0) {
