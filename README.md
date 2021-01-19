@@ -8,7 +8,7 @@
  
  ![](./demo.png)
  
- ![](./running.png)
+ ![](./running.png?v=1)
 
 จากนั้นให้เขียน WebSocketClient เชื่อมต่อมาที่ `ws://localhost` เพื่อลองทดสอบดู
 
