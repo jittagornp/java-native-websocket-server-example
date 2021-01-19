@@ -4,7 +4,6 @@
 package me.jittagornp.example.websocket;
 
 import me.jittagornp.example.util.ByteBufferUtils;
-
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
@@ -111,11 +110,7 @@ public class WebSocketServer {
                         ByteBuffer buffer = null;
                         try {
                             final int BUFFER_SIZE = 100;
-                            buffer = ByteBufferUtils.read(channel, BUFFER_SIZE);
-
-                            //Change to Read mode
-                            buffer.flip();
-
+                            buffer = ByteBufferUtils.read(channel, BUFFER_SIZE).flip();
                         } catch (final IOException e) {
                             handler.onError(webSocket, e);
                         }
@@ -144,10 +139,7 @@ public class WebSocketServer {
         }
 
         final String response = buildHandshakeResponse(secWebSocketKey);
-        final ByteBuffer byteBuffer = ByteBufferUtils.create(response);
-
-        //Change to Read mode
-        byteBuffer.flip();
+        final ByteBuffer byteBuffer = ByteBufferUtils.create(response).flip();
 
         webSocket.getChannel().write(byteBuffer);
         webSocket.setHandshake(true);

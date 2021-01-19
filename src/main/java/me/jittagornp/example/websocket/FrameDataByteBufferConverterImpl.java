@@ -7,7 +7,6 @@ import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Random;
-
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -167,10 +166,7 @@ public class FrameDataByteBufferConverterImpl implements FrameDataByteBufferConv
         final byte maskBits = frameData.isMask() ? MASK_BITS : (byte) 0b00000000;
 
         //Payload length:  7 bits, 7+16 bits, or 7+64 bits
-        final ByteBuffer payloadLength = buildPayloadLengthByteBuffer(payloadData.remaining(), maskBits);
-
-        //Change to Read mode
-        payloadLength.flip();
+        final ByteBuffer payloadLength = buildPayloadLengthByteBuffer(payloadData.remaining(), maskBits).flip();
 
         //==========================================
         //Allocate frame buffer
