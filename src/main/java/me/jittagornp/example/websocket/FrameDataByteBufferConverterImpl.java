@@ -14,6 +14,27 @@ import static java.util.stream.Collectors.toList;
  */
 public class FrameDataByteBufferConverterImpl implements FrameDataByteBufferConverter {
 
+    //1000 0000
+    private static final byte FIN_BITS = (byte) 0b10000000;
+
+    //0100 0000
+    private final byte RSV1_BITS = (byte) 0b01000000;
+
+    //0010 0000
+    private final byte RSV2_BITS = (byte) 0b00100000;
+
+    //0001 0000
+    private final byte RSV3_BITS = (byte) 0b00010000;
+
+    //0000 1111
+    private final byte OPCODE_BITS = (byte) 0b00001111;
+
+    //1000 0000
+    private final byte MASK_BITS = (byte) 0b10000000;
+
+    //0111 1111
+    final byte PAYLOAD_LENGTH_BITS = (byte) 0b01111111;
+
     private final Random random = new Random();
 
     @Override
@@ -34,37 +55,19 @@ public class FrameDataByteBufferConverterImpl implements FrameDataByteBufferConv
 
         final byte firstByte = byteBuffer.get();
 
-        //1000 0000
-        final byte finBits = (byte) 0b10000000;
-        final boolean isFin = (((byte) (firstByte & finBits)) >> 7 & 1) == 1;
+        final boolean isFin = (((byte) (firstByte & FIN_BITS)) >> 7 & 1) == 1;
+        final boolean isRSV1 = (((byte) (firstByte & RSV1_BITS)) >> 6 & 1) == 1;
+        final boolean isRSV2 = (((byte) (firstByte & RSV2_BITS)) >> 5 & 1) == 1;
+        final boolean isRSV3 = (((byte) (firstByte & RSV3_BITS)) >> 4 & 1) == 1;
 
-        //0100 0000
-        final byte rsv1Bits = (byte) 0b01000000;
-        final boolean isRSV1 = (((byte) (firstByte & rsv1Bits)) >> 6 & 1) == 1;
-
-        //0010 0000
-        final byte rsv2Bits = (byte) 0b00100000;
-        final boolean isRSV2 = (((byte) (firstByte & rsv2Bits)) >> 5 & 1) == 1;
-
-        //0001 0000
-        final byte rsv3Bits = (byte) 0b00010000;
-        final boolean isRSV3 = (((byte) (firstByte & rsv3Bits)) >> 4 & 1) == 1;
-
-        //0000 1111
-        final byte opcodeBits = (byte) 0b00001111;
-        final byte opcodeByteValue = (byte) (firstByte & opcodeBits);
+        final byte opcodeByteValue = (byte) (firstByte & OPCODE_BITS);
         final Opcode opcode = Opcode.fromByteValue(opcodeByteValue);
 
         //==========================================
         final byte secondByte = byteBuffer.get();
 
-        //1000 0000
-        final byte maskBits = (byte) 0b10000000;
-        final boolean isMask = (((byte) (secondByte & maskBits)) >> 7 & 1) == 1;
-
-        //0111 1111
-        final byte payloadLengthBits = (byte) 0b01111111;
-        final byte payloadLength = (byte) (secondByte & payloadLengthBits);
+        final boolean isMask = (((byte) (secondByte & MASK_BITS)) >> 7 & 1) == 1;
+        final byte payloadLength = (byte) (secondByte & PAYLOAD_LENGTH_BITS);
 
         //==========================================
         int payloadDataBufferSize = getPayloadDataBufferSize(payloadLength, byteBuffer);
@@ -139,28 +142,20 @@ public class FrameDataByteBufferConverterImpl implements FrameDataByteBufferConv
 
         //FIN:  1 bit
         if (frameData.isFin()) {
-            //OR with 1000 0000
-            final byte finBits = (byte) 0b10000000;
-            firstByte |= finBits;
+            firstByte |= FIN_BITS;
         }
 
         //RSV1, RSV2, RSV3:  1 bit each
         if (frameData.isRSV1()) {
-            //OR with 0100 0000
-            final byte rsv1Bits = (byte) 0b01000000;
-            firstByte |= rsv1Bits;
+            firstByte |= RSV1_BITS;
         }
 
         if (frameData.isRSV2()) {
-            //OR with 0010 0000
-            final byte rsv2Bits = (byte) 0b00100000;
-            firstByte |= rsv2Bits;
+            firstByte |= RSV2_BITS;
         }
 
         if (frameData.isRSV3()) {
-            //OR with 0001 0000
-            final byte rsv3Bits = (byte) 0b00010000;
-            firstByte |= rsv3Bits;
+            firstByte |= RSV3_BITS;
         }
 
         //Opcode:  4 bits
@@ -205,7 +200,7 @@ public class FrameDataByteBufferConverterImpl implements FrameDataByteBufferConv
 
     private ByteBuffer buildPayloadLengthByteBuffer(final int length, final byte maskBits) {
 
-        if (length <= 125) {
+        if (length >= 0 && length <= 125) {
             //1 byte = 1 bit + 7 bits
             return buildPayloadLengthAndExtended(
                     length,

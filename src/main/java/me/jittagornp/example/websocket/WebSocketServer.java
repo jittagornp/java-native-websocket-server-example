@@ -3,6 +3,7 @@
  */
 package me.jittagornp.example.websocket;
 
+import me.jittagornp.example.util.ByteBufferUtils;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
@@ -27,18 +28,17 @@ public class WebSocketServer {
 
     private final int port;
 
-    private final ByteBuffer readByteBuffer;
+    private final FrameDataByteBufferConverter converter;
 
     private ServerSocketChannel serverSocketChannel;
 
-    private final FrameDataByteBufferConverter converter;
-
     private List<WebSocketHandler> webSocketHandlers;
+
+    private MultipleWebSocketHandler handler;
 
     private WebSocketServer(final int port) {
         this.port = port;
         this.webSocketHandlers = new ArrayList<>();
-        this.readByteBuffer = ByteBuffer.allocate(1024);
         this.converter = new FrameDataByteBufferConverterImpl();
     }
 
@@ -61,7 +61,9 @@ public class WebSocketServer {
 
     public void start() throws IOException, NoSuchAlgorithmException {
 
-        System.out.println("WebSocketServer started on port :" + port);
+        System.out.println("WebSocketServer started on port " + port);
+
+        handler = new MultipleWebSocketHandler(webSocketHandlers);
 
         //1. Define server channel
         serverSocketChannel = ServerSocketChannel.open();
@@ -86,12 +88,11 @@ public class WebSocketServer {
 
                     if (key.isAcceptable()) {
 
-                        final SocketChannel clientChannel = serverSocketChannel.accept();
-                        final WebSocket webSocket = new WebSocket(clientChannel);
+                        final SocketChannel channel = serverSocketChannel.accept();
+                        final WebSocket webSocket = new WebSocket(channel);
 
-                        clientChannel.configureBlocking(false);
-                        clientChannel.register(selector, SelectionKey.OP_READ, webSocket);
-                        System.out.println("New client connected.");
+                        channel.configureBlocking(false);
+                        channel.register(selector, SelectionKey.OP_READ, webSocket);
 
                     } else if (key.isReadable()) {
 
@@ -100,39 +101,28 @@ public class WebSocketServer {
                             key.cancel();
                         }
 
-                        final SocketChannel clientChannel = webSocket.getChannel();
-                        if (clientChannel == null) {
+                        final SocketChannel channel = webSocket.getChannel();
+                        if (channel == null) {
                             key.cancel();
-                            onDisconnect(webSocket);
+                            handler.onDisconnect(webSocket);
                         }
 
-                        while (true) {
+                        ByteBuffer buffer = null;
+                        try {
+                            final int BUFFER_SIZE = 100;
+                            buffer = ByteBufferUtils.read(channel, BUFFER_SIZE);
+                        } catch (final IOException e) {
+                            handler.onError(webSocket, e);
+                        }
 
-                            //Change to Write mode
-                            readByteBuffer.clear();
-
-                            //Read data / Write data from channel to byteBuffer
-                            int status = 0;
-                            try {
-                                status = clientChannel.read(readByteBuffer);
-                            } catch (final IOException e) {
-                                onError(webSocket, e);
-                            }
-
-                            if (status <= 0) {
-                                break;
-                            }
-
-                            //Change to Read mode
-                            readByteBuffer.flip();
-
-                            final String secWebSocketKey = getSecWebSocketKey(readByteBuffer);
-                            if (secWebSocketKey != null) {
-                                doHandShake(secWebSocketKey, webSocket);
+                        final boolean hasData = (buffer != null) && (buffer.remaining() > 0);
+                        if (hasData) {
+                            if (webSocket.isHandshake()) {
+                                processFrameData(buffer, webSocket);
                             } else {
-                                processFrameData(readByteBuffer, webSocket);
+                                final String secWebSocketKey = getSecWebSocketKey(buffer);
+                                doHandShake(secWebSocketKey, webSocket);
                             }
-
                         }
 
                     }
@@ -143,38 +133,31 @@ public class WebSocketServer {
     }
 
     private void doHandShake(final String secWebSocketKey, final WebSocket webSocket) throws IOException, NoSuchAlgorithmException {
+
+        if (secWebSocketKey == null) {
+            return;
+        }
+
         final String response = buildHandshakeResponse(secWebSocketKey);
-        final ByteBuffer byteBuffer = convertToByteBuffer(response);
+        final ByteBuffer byteBuffer = ByteBufferUtils.create(response);
+
+        //Change to Read mode
+        byteBuffer.flip();
+
         webSocket.getChannel().write(byteBuffer);
+        webSocket.setHandshake(true);
 
         System.out.println("===============================");
-        System.out.println("Handshake...");
+        System.out.println("WebSocket Handshake");
         System.out.println("Request Sec-WebSocket-Key : " + secWebSocketKey);
         System.out.println("-------------------------------");
         System.out.println("Http Response : ");
         System.out.println(response);
 
-        onConnect(webSocket);
-    }
-
-    private ByteBuffer convertToByteBuffer(final String text) {
-        final byte[] byteArray = text.getBytes(StandardCharsets.UTF_8);
-        final ByteBuffer byteBuffer = ByteBuffer.allocate(byteArray.length);
-        byteBuffer.put(byteArray);
-        byteBuffer.flip();
-        return byteBuffer;
-    }
-
-    public void stop() throws IOException {
-        serverSocketChannel.close();
+        handler.onConnect(webSocket);
     }
 
     private String getSecWebSocketKey(final ByteBuffer byteBuffer) {
-
-        if (!byteBuffer.hasArray()) {
-            return null;
-        }
-
         final String text = new String(byteBuffer.array(), StandardCharsets.UTF_8);
         if (text.isEmpty()) {
             return null;
@@ -220,80 +203,16 @@ public class WebSocketServer {
             frames = converter.convertToFrameData(byteBuffers);
         } catch (final Exception e) {
             frames = Collections.emptyList();
-            onError(webSocket, e);
+            handler.onError(webSocket, e);
         }
 
         for (FrameData frameData : frames) {
-            onMessage(webSocket, frameData.getOpcode(), frameData.getPayloadData());
+            handler.onMessage(webSocket, frameData);
         }
     }
 
-    private void onConnect(final WebSocket webSocket) {
-        webSocketHandlers.stream()
-                .forEach(handler -> {
-                    try {
-                        handler.onConnect(webSocket);
-                    } catch (final Throwable e) {
-                        handleError(handler, webSocket, e);
-                    }
-                });
-    }
-
-    private void onMessage(final WebSocket webSocket, final Opcode opcode, final ByteBuffer byteBuffer) {
-        webSocketHandlers.stream()
-                .forEach(handler -> {
-
-                    if (opcode == Opcode.CONNECTION_CODE) {
-                        try {
-                            webSocket.getChannel().close();
-                            handler.onDisconnect(webSocket);
-                        } catch (final Throwable e) {
-                            handleError(handler, webSocket, e);
-                        }
-                    } else if (opcode == Opcode.TEXT_FRAME) {
-                        try {
-                            if (handler instanceof TextWebSocketHandler) {
-                                final String message = new String(byteBuffer.array(), StandardCharsets.UTF_8);
-                                handler.onMessage(webSocket, message);
-                            } else {
-                                handler.onMessage(webSocket, byteBuffer);
-                            }
-                        } catch (final Throwable e) {
-                            handleError(handler, webSocket, e);
-                        }
-                    } else {
-                        try {
-                            handler.onMessage(webSocket, byteBuffer);
-                        } catch (final Throwable e) {
-                            handleError(handler, webSocket, e);
-                        }
-                    }
-
-                });
-    }
-
-    private void onError(final WebSocket webSocket, final Throwable e) {
-        webSocketHandlers.stream()
-                .forEach(handler -> handleError(handler, webSocket, e));
-    }
-
-    private void handleError(final WebSocketHandler handler, final WebSocket webSocket, final Throwable e) {
-        try {
-            handler.onError(webSocket, e);
-        } catch (final Throwable ex) {
-            ex.printStackTrace();
-        }
-    }
-
-    private void onDisconnect(final WebSocket webSocket) {
-        webSocketHandlers.stream()
-                .forEach(handler -> {
-                    try {
-                        webSocket.getChannel().close();
-                        handler.onDisconnect(webSocket);
-                    } catch (final IOException e) {
-                        handleError(handler, webSocket, e);
-                    }
-                });
+    public void stop() throws IOException {
+        serverSocketChannel.close();
+        webSocketHandlers.clear();
     }
 }

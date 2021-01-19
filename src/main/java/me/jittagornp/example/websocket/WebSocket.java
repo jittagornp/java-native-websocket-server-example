@@ -3,10 +3,11 @@
  */
 package me.jittagornp.example.websocket;
 
+import me.jittagornp.example.util.ByteBufferUtils;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
-import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -22,6 +23,8 @@ public class WebSocket {
 
     private final FrameDataByteBufferConverter converter;
 
+    private boolean isHandshake;
+
     public WebSocket(final SocketChannel channel) {
         this.channel = channel;
         this.sessionId = UUID.randomUUID().toString();
@@ -36,13 +39,21 @@ public class WebSocket {
         return channel;
     }
 
+    public boolean isHandshake() {
+        return isHandshake;
+    }
+
+    public void setHandshake(final boolean handshake) {
+        isHandshake = handshake;
+    }
+
     public void send(final String text) {
-
-        final byte[] byteArray = text.getBytes(StandardCharsets.UTF_8);
-        final ByteBuffer payloadData = ByteBuffer.allocate(byteArray.length);
-        payloadData.put(byteArray);
-
+        final ByteBuffer payloadData = ByteBufferUtils.create(text);
         send(payloadData, Opcode.TEXT_FRAME);
+    }
+
+    public void send(final ByteBuffer payloadData) {
+        send(payloadData, Opcode.BINARY_FRAME);
     }
 
     public void send(final ByteBuffer payloadData, final Opcode opcode) {
@@ -51,7 +62,7 @@ public class WebSocket {
                 .rsv1(false)
                 .rsv2(false)
                 .rsv3(false)
-                .opcode(Opcode.TEXT_FRAME)
+                .opcode(opcode)
                 .mask(false)
                 .payloadData(payloadData)
                 .build();
