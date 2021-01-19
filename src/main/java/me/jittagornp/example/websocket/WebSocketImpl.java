@@ -30,10 +30,12 @@ public class WebSocketImpl implements WebSocket {
         this.converter = new FrameDataByteBufferConverterImpl();
     }
 
+    @Override
     public String getSessionId() {
         return sessionId;
     }
 
+    @Override
     public SocketChannel getChannel() {
         return channel;
     }
@@ -46,15 +48,18 @@ public class WebSocketImpl implements WebSocket {
         isHandshake = handshake;
     }
 
+    @Override
     public void send(final String text) {
         final ByteBuffer payloadData = ByteBufferUtils.create(text);
         send(payloadData, Opcode.TEXT_FRAME);
     }
 
+    @Override
     public void send(final ByteBuffer byteBuffer) {
         send(byteBuffer, Opcode.BINARY_FRAME);
     }
 
+    @Override
     public void send(final ByteBuffer payloadData, final Opcode opcode) {
         final FrameData frameData = FrameData.builder()
                 .fin(true)
