@@ -3,7 +3,6 @@
  */
 package me.jittagornp.example.websocket;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
@@ -45,7 +44,7 @@ public class MultipleWebSocketHandler implements WebSocketHandler<FrameData> {
     @Override
     public void onDisconnect(final WebSocket webSocket) {
         handlers.stream()
-                .forEach(handler -> handleConnectionClose(handler, webSocket, null));
+                .forEach(handler -> handleConnectionCloseFrame(handler, webSocket, null));
     }
 
     private void handleError(final WebSocketHandler handler, final WebSocket webSocket, final Throwable e) {
@@ -60,7 +59,7 @@ public class MultipleWebSocketHandler implements WebSocketHandler<FrameData> {
         final Opcode opcode = frameData.getOpcode();
         System.out.println("opcode : " + opcode);
         if (opcode == Opcode.CONNECTION_CODE) {
-            handleConnectionClose(handler, webSocket, frameData);
+            handleConnectionCloseFrame(handler, webSocket, frameData);
         } else if (opcode == Opcode.TEXT_FRAME) {
             handleTextFrame(handler, webSocket, frameData);
         } else if (opcode == Opcode.BINARY_FRAME) {
@@ -72,7 +71,7 @@ public class MultipleWebSocketHandler implements WebSocketHandler<FrameData> {
         }
     }
 
-    private void handleConnectionClose(final WebSocketHandler handler, final WebSocket webSocket, final FrameData frameData) {
+    private void handleConnectionCloseFrame(final WebSocketHandler handler, final WebSocket webSocket, final FrameData frameData) {
         try {
             webSocket.getChannel().close();
             handler.onDisconnect(webSocket);
