@@ -59,7 +59,6 @@ public class ByteBufferUtils {
         final int realSize = origin.remaining();
         final ByteBuffer copy = ByteBuffer.allocate(realSize);
         copy.put(origin.array(), origin.position(), origin.limit());
-        copy.flip();
         return copy;
     }
 
@@ -73,14 +72,19 @@ public class ByteBufferUtils {
             return byteBuffers.stream().findFirst().get();
         }
 
-        final int totalSize = byteBuffers.stream().mapToInt(ByteBuffer::remaining).sum();
+        final int totalSize = byteBuffers.stream()
+                .map(buffer -> {
+                    buffer.flip();
+                    return buffer;
+                }).mapToInt(ByteBuffer::remaining)
+                .sum();
+
         if (totalSize == 0) {
             return ByteBuffer.allocate(0);
         }
 
         final ByteBuffer concatenated = ByteBuffer.allocate(totalSize);
         byteBuffers.forEach(buffer -> concatenated.put(buffer.duplicate()));
-        concatenated.flip();
         return concatenated;
     }
 

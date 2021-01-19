@@ -112,6 +112,9 @@ public class WebSocketServer {
                         try {
                             final int BUFFER_SIZE = 100;
                             buffer = ByteBufferUtils.read(channel, BUFFER_SIZE);
+
+                            //Change to Read mode
+                            buffer.flip();
                         } catch (final IOException e) {
                             handler.onError(webSocket, e);
                         }
