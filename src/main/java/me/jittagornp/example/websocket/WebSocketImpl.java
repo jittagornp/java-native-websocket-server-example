@@ -17,12 +17,9 @@ public class WebSocketImpl implements WebSocket {
 
     private boolean handshake;
 
-    private final SocketChannel channel;
-
     private final Queue<FrameData> messageQueue;
 
-    public WebSocketImpl(final SocketChannel channel) {
-        this.channel = channel;
+    public WebSocketImpl() {
         this.messageQueue = new LinkedList<>();
         this.sessionId = UUID.randomUUID().toString();
     }
@@ -30,10 +27,6 @@ public class WebSocketImpl implements WebSocket {
     @Override
     public String getSessionId() {
         return sessionId;
-    }
-
-    public SocketChannel getChannel() {
-        return channel;
     }
 
     public boolean isHandshake() {
