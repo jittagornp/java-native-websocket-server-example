@@ -4,6 +4,7 @@
 package me.jittagornp.example.websocket;
 
 import java.nio.charset.StandardCharsets;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -11,10 +12,21 @@ import java.util.List;
  */
 public class MultipleWebSocketHandler implements WebSocketHandler<FrameData> {
 
-    private final List<WebSocketHandler> handlers;
+    private List<WebSocketHandler> handlers;
 
-    public MultipleWebSocketHandler(final List<WebSocketHandler> handlers) {
+    public List<WebSocketHandler> getHandlers() {
+        if (handlers == null) {
+            handlers = new LinkedList<>();
+        }
+        return handlers;
+    }
+
+    public void setHandlers(final List<WebSocketHandler> handlers) {
         this.handlers = handlers;
+    }
+
+    public void addHandler(final WebSocketHandler handler) {
+        getHandlers().add(handler);
     }
 
     @Override

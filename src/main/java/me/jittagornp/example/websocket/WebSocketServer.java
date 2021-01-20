@@ -4,6 +4,7 @@
 package me.jittagornp.example.websocket;
 
 import me.jittagornp.example.util.ByteBufferUtils;
+
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
@@ -32,13 +33,11 @@ public class WebSocketServer {
 
     private ServerSocketChannel serverSocketChannel;
 
-    private List<WebSocketHandler> handlers;
-
     private MultipleWebSocketHandler handler;
 
     private WebSocketServer(final int port) {
         this.port = port;
-        this.handlers = new LinkedList<>();
+        this.handler = new MultipleWebSocketHandler();
         this.converter = new FrameDataByteBufferConverterImpl();
     }
 
@@ -47,23 +46,18 @@ public class WebSocketServer {
     }
 
     public WebSocketServer addWebSocketHandler(final WebSocketHandler handler) {
-        this.handlers.add(handler);
+        this.handler.addHandler(handler);
         return this;
     }
 
     public WebSocketServer setHandlers(final List<WebSocketHandler> handlers) {
-        this.handlers = handlers;
-        if (this.handlers == null) {
-            this.handlers = new ArrayList<>();
-        }
+        this.handler.setHandlers(handlers);
         return this;
     }
 
     public void start() throws IOException, NoSuchAlgorithmException {
 
         System.out.println("WebSocketServer started on port " + port);
-
-        handler = new MultipleWebSocketHandler(handlers);
 
         //1. Define server channel
         serverSocketChannel = ServerSocketChannel.open();
@@ -232,6 +226,6 @@ public class WebSocketServer {
 
     public void stop() throws IOException {
         serverSocketChannel.close();
-        handlers.clear();
+        handler.getHandlers().clear();
     }
 }
