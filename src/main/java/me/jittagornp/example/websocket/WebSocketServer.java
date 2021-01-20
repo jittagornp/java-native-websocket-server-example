@@ -199,9 +199,7 @@ public class WebSocketServer {
                 .append("HTTP/1.1 101 Switching Protocols\r\n")
                 .append("Connection: Upgrade\r\n")
                 .append("Upgrade: websocket\r\n")
-                .append("Sec-WebSocket-Accept: ")
-                .append(secWebSocketAccept)
-                .append("\r\n\r\n")
+                .append("Sec-WebSocket-Accept: ").append(secWebSocketAccept).append("\r\n\r\n")
                 .toString();
     }
 
