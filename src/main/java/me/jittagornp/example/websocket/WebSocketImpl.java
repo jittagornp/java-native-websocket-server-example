@@ -17,9 +17,9 @@ public class WebSocketImpl implements WebSocket {
 
     private boolean handshake;
 
-    private final Queue<FrameData> messageQueue;
-
     private final SocketChannel channel;
+
+    private final Queue<FrameData> messageQueue;
 
     public WebSocketImpl(final SocketChannel channel) {
         this.channel = channel;
