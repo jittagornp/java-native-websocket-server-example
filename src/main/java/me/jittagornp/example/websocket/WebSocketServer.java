@@ -4,7 +4,6 @@
 package me.jittagornp.example.websocket;
 
 import me.jittagornp.example.util.ByteBufferUtils;
-
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
@@ -86,11 +85,11 @@ public class WebSocketServer {
 
                     } else if (key.isReadable()) {
 
-                        handleReadable(key);
+                        handleReadable((SocketChannel) key.channel(), (WebSocketImpl) key.attachment());
 
                     } else if (key.isWritable()) {
 
-                        handleWritable(key);
+                        handleWritable((SocketChannel) key.channel(), (WebSocketImpl) key.attachment());
                     }
 
                     keyIterator.remove();
@@ -107,10 +106,7 @@ public class WebSocketServer {
         channel.register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE, webSocket);
     }
 
-    private void handleReadable(final SelectionKey key) throws IOException, NoSuchAlgorithmException {
-        final WebSocketImpl webSocket = (WebSocketImpl) key.attachment();
-        final SocketChannel channel = (SocketChannel) key.channel();
-
+    private void handleReadable(final SocketChannel channel, final WebSocketImpl webSocket) throws IOException, NoSuchAlgorithmException {
         ByteBuffer buffer = null;
         try {
             final int BUFFER_SIZE = 100; //100 bytes
@@ -122,19 +118,16 @@ public class WebSocketServer {
         final boolean hasData = (buffer != null) && (buffer.remaining() > 0);
         if (hasData) {
             if (webSocket.isHandshake()) {
-                processFrameData(buffer, channel, webSocket);
+                processFrameData(channel, webSocket, buffer);
             } else {
                 final String secWebSocketKey = getSecWebSocketKey(buffer);
-                doHandShake(secWebSocketKey, channel, webSocket);
+                doHandShake(channel, webSocket, secWebSocketKey);
             }
         }
     }
 
-    private void handleWritable(final SelectionKey key) {
-        final WebSocketImpl webSocket = (WebSocketImpl) key.attachment();
-        final SocketChannel channel = (SocketChannel) key.channel();
+    private void handleWritable(final SocketChannel channel, final WebSocketImpl webSocket) {
         final Queue<FrameData> queue = webSocket.getMessageQueue();
-
         while (!queue.isEmpty()) {
             try {
                 //Take element from queue
@@ -151,7 +144,7 @@ public class WebSocketServer {
         }
     }
 
-    private void doHandShake(final String secWebSocketKey, final SocketChannel channel, final WebSocketImpl webSocket) throws IOException, NoSuchAlgorithmException {
+    private void doHandShake(final SocketChannel channel, final WebSocketImpl webSocket, final String secWebSocketKey) throws IOException, NoSuchAlgorithmException {
         if (secWebSocketKey != null) {
             final String response = buildHandshakeResponse(secWebSocketKey);
             final ByteBuffer byteBuffer = ByteBufferUtils.create(response).flip();
@@ -203,7 +196,7 @@ public class WebSocketServer {
                 .toString();
     }
 
-    private void processFrameData(final ByteBuffer byteBuffer, final SocketChannel channel, final WebSocket webSocket) {
+    private void processFrameData(final SocketChannel channel, final WebSocket webSocket, final ByteBuffer byteBuffer) {
         try {
             final List<ByteBuffer> byteBuffers = Collections.singletonList(byteBuffer);
             final List<FrameData> frames = converter.convertToFrameData(byteBuffers);
