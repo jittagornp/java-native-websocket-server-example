@@ -4,6 +4,7 @@
 package me.jittagornp.example.websocket;
 
 import me.jittagornp.example.util.ByteBufferUtils;
+
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
@@ -209,11 +210,8 @@ public class WebSocketServer {
             final List<ByteBuffer> byteBuffers = Collections.singletonList(byteBuffer);
             final List<FrameData> frames = converter.convertToFrameData(byteBuffers);
             for (FrameData frameData : frames) {
-                if (frameData.getOpcode() == Opcode.CONNECTION_CLOSE) {
-                    channel.close();
-                } else {
-                    handler.onMessage(webSocket, frameData);
-                }
+                if (frameData.getOpcode() == Opcode.CONNECTION_CLOSE) channel.close();
+                handler.onMessage(webSocket, frameData);
             }
         } catch (final Throwable e) {
             handler.onError(webSocket, e);
