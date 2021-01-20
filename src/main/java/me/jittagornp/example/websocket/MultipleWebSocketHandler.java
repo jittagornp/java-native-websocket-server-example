@@ -73,7 +73,7 @@ public class MultipleWebSocketHandler implements WebSocketHandler<FrameData> {
 
     private void handleConnectionCloseFrame(final WebSocketHandler handler, final WebSocket webSocket, final FrameData frameData) {
         try {
-            webSocket.getChannel().close();
+            ((WebSocketImpl) webSocket).getChannel().close();
             handler.onDisconnect(webSocket);
         } catch (final Throwable e) {
             handleError(handler, webSocket, e);

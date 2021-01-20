@@ -4,12 +4,9 @@
 package me.jittagornp.example.websocket;
 
 import me.jittagornp.example.util.ByteBufferUtils;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * @author jitta
@@ -18,14 +15,17 @@ public class WebSocketImpl implements WebSocket {
 
     private String sessionId;
 
-    private final SocketChannel channel;
+    private boolean handshake;
 
     private final FrameDataByteBufferConverter converter;
 
-    private boolean isHandshake;
+    private final Queue<FrameData> messageQueue;
+
+    private final SocketChannel channel;
 
     public WebSocketImpl(final SocketChannel channel) {
         this.channel = channel;
+        this.messageQueue = new LinkedList<>();
         this.sessionId = UUID.randomUUID().toString();
         this.converter = new FrameDataByteBufferConverterImpl();
     }
@@ -35,52 +35,55 @@ public class WebSocketImpl implements WebSocket {
         return sessionId;
     }
 
-    @Override
     public SocketChannel getChannel() {
         return channel;
     }
 
     public boolean isHandshake() {
-        return isHandshake;
+        return handshake;
     }
 
     public void setHandshake(final boolean handshake) {
-        isHandshake = handshake;
+        this.handshake = handshake;
+    }
+
+    public Queue<FrameData> getMessageQueue() {
+        return messageQueue;
     }
 
     @Override
-    public void send(final String text) {
-        final ByteBuffer payloadData = ByteBufferUtils.create(text);
-        send(payloadData, Opcode.TEXT_FRAME);
+    public void send(final String message) {
+        send(
+                FrameData.builder()
+                        .fin(true)
+                        .rsv1(false)
+                        .rsv2(false)
+                        .rsv3(false)
+                        .opcode(Opcode.TEXT_FRAME)
+                        .mask(false)
+                        .payloadData(ByteBufferUtils.create(message))
+                        .build()
+        );
     }
 
     @Override
-    public void send(final ByteBuffer byteBuffer) {
-        send(byteBuffer, Opcode.BINARY_FRAME);
+    public void send(final ByteBuffer message) {
+        send(
+                FrameData.builder()
+                        .fin(true)
+                        .rsv1(false)
+                        .rsv2(false)
+                        .rsv3(false)
+                        .opcode(Opcode.BINARY_FRAME)
+                        .mask(false)
+                        .payloadData(message)
+                        .build()
+        );
     }
 
     @Override
-    public void send(final ByteBuffer payloadData, final Opcode opcode) {
-        final FrameData frameData = FrameData.builder()
-                .fin(true)
-                .rsv1(false)
-                .rsv2(false)
-                .rsv3(false)
-                .opcode(opcode)
-                .mask(false)
-                .payloadData(payloadData)
-                .build();
-
-        final List<FrameData> frames = Collections.singletonList(frameData);
-        final List<ByteBuffer> frameBuffers = converter.covertToByteBuffer(frames);
-        for (ByteBuffer frameBuffer : frameBuffers) {
-            try {
-                frameBuffer.flip();
-                channel.write(frameBuffer);
-            } catch (final IOException e) {
-                e.printStackTrace();
-            }
-        }
+    public void send(final FrameData message) {
+        messageQueue.add(message);
     }
 
     @Override

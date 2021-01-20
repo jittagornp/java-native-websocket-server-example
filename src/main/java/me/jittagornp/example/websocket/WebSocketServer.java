@@ -5,6 +5,7 @@ package me.jittagornp.example.websocket;
 
 import me.jittagornp.example.util.ByteBufferUtils;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -38,7 +39,7 @@ public class WebSocketServer {
 
     private WebSocketServer(final int port) {
         this.port = port;
-        this.webSocketHandlers = new ArrayList<>();
+        this.webSocketHandlers = new LinkedList<>();
         this.converter = new FrameDataByteBufferConverterImpl();
     }
 
@@ -88,47 +89,75 @@ public class WebSocketServer {
 
                     if (key.isAcceptable()) {
 
-                        final SocketChannel channel = serverSocketChannel.accept();
-                        final WebSocketImpl webSocket = new WebSocketImpl(channel);
-
-                        channel.configureBlocking(false);
-                        channel.register(selector, SelectionKey.OP_READ, webSocket);
+                        handleAcceptable(selector);
 
                     } else if (key.isReadable()) {
 
-                        final WebSocketImpl webSocket = (WebSocketImpl) key.attachment();
-                        if (webSocket == null) {
-                            key.cancel();
-                        }
+                        handleReadable(key);
 
-                        final SocketChannel channel = webSocket.getChannel();
-                        if (channel == null) {
-                            key.cancel();
-                            System.out.println("Lost connection.");
-                            handler.onDisconnect(webSocket);
-                        }
+                    } else if (key.isWritable()) {
 
-                        ByteBuffer buffer = null;
-                        try {
-                            final int BUFFER_SIZE = 100;
-                            buffer = ByteBufferUtils.read(channel, BUFFER_SIZE).flip();
-                        } catch (final IOException e) {
-                            handler.onError(webSocket, e);
-                        }
-
-                        final boolean hasData = (buffer != null) && (buffer.remaining() > 0);
-                        if (hasData) {
-                            if (webSocket.isHandshake()) {
-                                processFrameData(buffer, webSocket);
-                            } else {
-                                final String secWebSocketKey = getSecWebSocketKey(buffer);
-                                doHandShake(secWebSocketKey, webSocket);
-                            }
-                        }
-
+                        handleWritable(key);
                     }
+
                     keyIterator.remove();
                 }
+            }
+        }
+    }
+
+    private void handleAcceptable(final Selector selector) throws IOException {
+        final SocketChannel channel = serverSocketChannel.accept();
+        final WebSocketImpl webSocket = new WebSocketImpl(channel);
+
+        channel.configureBlocking(false);
+        channel.register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE, webSocket);
+    }
+
+    private void handleReadable(final SelectionKey key) throws IOException, NoSuchAlgorithmException {
+        final WebSocketImpl webSocket = (WebSocketImpl) key.attachment();
+        final SocketChannel channel = webSocket.getChannel();
+
+        ByteBuffer buffer = null;
+        try {
+            final int BUFFER_SIZE = 100; //100 bytes
+            buffer = ByteBufferUtils.read(channel, BUFFER_SIZE).flip();
+        } catch (final IOException e) {
+            handler.onError(webSocket, e);
+        }
+
+        final boolean hasData = (buffer != null) && (buffer.remaining() > 0);
+        if (hasData) {
+            if (webSocket.isHandshake()) {
+                processFrameData(buffer, webSocket);
+            } else {
+                final String secWebSocketKey = getSecWebSocketKey(buffer);
+                doHandShake(secWebSocketKey, webSocket);
+            }
+        }
+    }
+
+    private void handleWritable(final SelectionKey key) {
+        final WebSocketImpl webSocket = (WebSocketImpl) key.attachment();
+        final SocketChannel channel = webSocket.getChannel();
+        final Queue<FrameData> queue = webSocket.getMessageQueue();
+
+        while (!queue.isEmpty()) {
+            try {
+                final FrameData frameData = queue.poll();
+                final List<FrameData> frames = Collections.singletonList(frameData);
+                converter.covertToByteBuffer(frames)
+                        .stream()
+                        .map(ByteBuffer::flip)
+                        .forEach(byteBuffer -> {
+                            try {
+                                channel.write(byteBuffer);
+                            } catch (final IOException e) {
+                                throw new UncheckedIOException(e);
+                            }
+                        });
+            } catch (final Throwable e) {
+                handler.onError(webSocket, e);
             }
         }
     }
