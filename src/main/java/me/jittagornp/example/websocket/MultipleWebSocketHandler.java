@@ -25,10 +25,6 @@ class MultipleWebSocketHandler implements WebSocketHandler<FrameData> {
         this.handlers = handlers;
     }
 
-    public void addHandler(final WebSocketHandler handler) {
-        getHandlers().add(handler);
-    }
-
     @Override
     public void onConnect(final WebSocket webSocket) {
         handlers.stream()
