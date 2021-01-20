@@ -64,24 +64,54 @@ class MultipleWebSocketHandler implements WebSocketHandler<FrameData> {
     }
 
     private void handleMessage(final WebSocketHandler handler, final WebSocket webSocket, final FrameData frameData) {
+
+        /**
+         *  |Opcode  | Meaning                             | Reference |
+         * -+--------+-------------------------------------+-----------|
+         *  | 0      | Continuation Frame                  | RFC 6455  |
+         * -+--------+-------------------------------------+-----------|
+         *  | 1      | Text Frame                          | RFC 6455  |
+         * -+--------+-------------------------------------+-----------|
+         *  | 2      | Binary Frame                        | RFC 6455  |
+         * -+--------+-------------------------------------+-----------|
+         *  | 8      | Connection Close Frame              | RFC 6455  |
+         * -+--------+-------------------------------------+-----------|
+         *  | 9      | Ping Frame                          | RFC 6455  |
+         * -+--------+-------------------------------------+-----------|
+         *  | 10     | Pong Frame                          | RFC 6455  |
+         * -+--------+-------------------------------------+-----------|
+         */
+
         final Opcode opcode = frameData.getOpcode();
         System.out.println("opcode : " + opcode);
-        if (opcode == Opcode.CONNECTION_CLOSE) {
-            handleConnectionCloseFrame(handler, webSocket, frameData);
+
+        if (opcode == Opcode.CONTINUATION_FRAME) {
+            handleContinuationFrame(handler, webSocket, frameData);
         } else if (opcode == Opcode.TEXT_FRAME) {
             handleTextFrame(handler, webSocket, frameData);
         } else if (opcode == Opcode.BINARY_FRAME) {
             handleBinaryFrame(handler, webSocket, frameData);
+        } else if (opcode == Opcode.CONNECTION_CLOSE) {
+            handleConnectionCloseFrame(handler, webSocket, frameData);
         } else if (opcode == Opcode.PING) {
             handlePingFrame(handler, webSocket, frameData);
+        } else if (opcode == Opcode.PONG) {
+            handlePongFrame(handler, webSocket, frameData);
         } else {
-            handleOtherFrame(handler, webSocket, frameData);
+            throw new UnsupportedOperationException("Unknown opcode " + opcode);
         }
     }
 
-    private void handleConnectionCloseFrame(final WebSocketHandler handler, final WebSocket webSocket, final FrameData frameData) {
+    private void handleContinuationFrame(final WebSocketHandler handler, final WebSocket webSocket, final FrameData frameData) {
         try {
-            handler.onDisconnect(webSocket);
+            if (handler instanceof TextWebSocketHandler) {
+                final String text = new String(frameData.getPayloadData().array(), StandardCharsets.UTF_8);
+                handler.onMessage(webSocket, text);
+            } else if (handler instanceof BinaryWebSocketHandler) {
+                handler.onMessage(webSocket, frameData.getPayloadData());
+            } else {
+                handler.onMessage(webSocket, frameData);
+            }
         } catch (final Throwable e) {
             handleError(handler, webSocket, e);
         }
@@ -112,15 +142,19 @@ class MultipleWebSocketHandler implements WebSocketHandler<FrameData> {
         }
     }
 
+    private void handleConnectionCloseFrame(final WebSocketHandler handler, final WebSocket webSocket, final FrameData frameData) {
+        try {
+            handler.onDisconnect(webSocket);
+        } catch (final Throwable e) {
+            handleError(handler, webSocket, e);
+        }
+    }
+
     private void handlePingFrame(final WebSocketHandler handler, final WebSocket webSocket, final FrameData frameData) {
         //TODO
     }
 
-    private void handleOtherFrame(final WebSocketHandler handler, final WebSocket webSocket, final FrameData frameData) {
-        try {
-            handler.onMessage(webSocket, frameData);
-        } catch (final Throwable e) {
-            handleError(handler, webSocket, e);
-        }
+    private void handlePongFrame(final WebSocketHandler handler, final WebSocket webSocket, final FrameData frameData) {
+        //TODO
     }
 }
