@@ -220,7 +220,7 @@ public class WebSocketServer {
         List<FrameData> frames = null;
         try {
             frames = converter.convertToFrameData(byteBuffers);
-        } catch (final Exception e) {
+        } catch (final Throwable e) {
             frames = Collections.emptyList();
             handler.onError(webSocket, e);
         }
