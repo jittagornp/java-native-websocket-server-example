@@ -17,8 +17,6 @@ public class WebSocketImpl implements WebSocket {
 
     private boolean handshake;
 
-    private final FrameDataByteBufferConverter converter;
-
     private final Queue<FrameData> messageQueue;
 
     private final SocketChannel channel;
@@ -27,7 +25,6 @@ public class WebSocketImpl implements WebSocket {
         this.channel = channel;
         this.messageQueue = new LinkedList<>();
         this.sessionId = UUID.randomUUID().toString();
-        this.converter = new FrameDataByteBufferConverterImpl();
     }
 
     @Override
