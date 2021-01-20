@@ -5,10 +5,7 @@ package me.jittagornp.example.websocket;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
-import java.util.List;
 import java.util.Random;
-
-import static java.util.stream.Collectors.toList;
 
 /**
  * @author jitta
@@ -39,20 +36,7 @@ class FrameDataByteBufferConverterImpl implements FrameDataByteBufferConverter {
     private final Random random = new Random();
 
     @Override
-    public List<FrameData> convertToFrameData(final List<ByteBuffer> byteBuffers) {
-        return byteBuffers.stream()
-                .map(this::convertToFrameData)
-                .collect(toList());
-    }
-
-    @Override
-    public List<ByteBuffer> covertToByteBuffer(final List<FrameData> frames) {
-        return frames.stream()
-                .map(this::convertToByteBuffer)
-                .collect(toList());
-    }
-
-    private FrameData convertToFrameData(final ByteBuffer byteBuffer) {
+    public FrameData convertToFrameData(final ByteBuffer byteBuffer) {
 
         final byte firstByte = byteBuffer.get();
 
@@ -131,7 +115,8 @@ class FrameDataByteBufferConverterImpl implements FrameDataByteBufferConverter {
         throw new UnsupportedOperationException("Invalid payload length");
     }
 
-    private ByteBuffer convertToByteBuffer(final FrameData frameData) {
+    @Override
+    public ByteBuffer convertToByteBuffer(final FrameData frameData) {
 
         final ByteBuffer payloadData = frameData.getPayloadData().flip();
 

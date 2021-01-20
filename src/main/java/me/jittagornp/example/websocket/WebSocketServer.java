@@ -126,12 +126,8 @@ public class WebSocketServer {
             try {
                 //Take element from queue
                 final FrameData frameData = queue.poll();
-
-                final List<FrameData> frames = Collections.singletonList(frameData);
-                final List<ByteBuffer> frameBuffers = converter.covertToByteBuffer(frames);
-                for (ByteBuffer frameBuffer : frameBuffers) {
-                    channel.write(frameBuffer.flip());
-                }
+                final ByteBuffer frameBuffer = converter.convertToByteBuffer(frameData).flip();
+                channel.write(frameBuffer);
             } catch (final IOException e) {
                 handler.onError(webSocket, e);
             }
@@ -192,12 +188,9 @@ public class WebSocketServer {
 
     private void processFrameData(final SocketChannel channel, final WebSocketImpl webSocket, final ByteBuffer byteBuffer) {
         try {
-            final List<ByteBuffer> byteBuffers = Collections.singletonList(byteBuffer);
-            final List<FrameData> frames = converter.convertToFrameData(byteBuffers);
-            for (FrameData frameData : frames) {
-                if (frameData.getOpcode() == Opcode.CONNECTION_CLOSE) channel.close();
-                handler.onMessage(webSocket, frameData);
-            }
+            final FrameData frameData = converter.convertToFrameData(byteBuffer);
+            if (frameData.getOpcode() == Opcode.CONNECTION_CLOSE) channel.close();
+            handler.onMessage(webSocket, frameData);
         } catch (final Throwable e) {
             handler.onError(webSocket, e);
         }

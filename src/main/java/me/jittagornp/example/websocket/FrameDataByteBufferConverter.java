@@ -4,15 +4,13 @@
 package me.jittagornp.example.websocket;
 
 import java.nio.ByteBuffer;
-import java.util.List;
-
 /**
  * @author jitta
  */
-public interface FrameDataByteBufferConverter {
+interface FrameDataByteBufferConverter {
 
-    List<FrameData> convertToFrameData(final List<ByteBuffer> byteBuffers);
+    FrameData convertToFrameData(final ByteBuffer byteBuffer);
 
-    List<ByteBuffer> covertToByteBuffer(final List<FrameData> frames);
+    ByteBuffer convertToByteBuffer(final FrameData frameData);
 
 }
