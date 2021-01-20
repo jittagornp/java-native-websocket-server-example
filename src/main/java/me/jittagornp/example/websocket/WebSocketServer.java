@@ -4,6 +4,7 @@
 package me.jittagornp.example.websocket;
 
 import me.jittagornp.example.util.ByteBufferUtils;
+
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.io.UnsupportedEncodingException;
@@ -146,17 +147,11 @@ public class WebSocketServer {
             try {
                 final FrameData frameData = queue.poll();
                 final List<FrameData> frames = Collections.singletonList(frameData);
-                converter.covertToByteBuffer(frames)
-                        .stream()
-                        .map(ByteBuffer::flip)
-                        .forEach(byteBuffer -> {
-                            try {
-                                channel.write(byteBuffer);
-                            } catch (final IOException e) {
-                                throw new UncheckedIOException(e);
-                            }
-                        });
-            } catch (final Throwable e) {
+                final List<ByteBuffer> frameBuffers = converter.covertToByteBuffer(frames);
+                for (ByteBuffer frameBuffer : frameBuffers) {
+                    channel.write(frameBuffer.flip());
+                }
+            } catch (final IOException e) {
                 handler.onError(webSocket, e);
             }
         }
