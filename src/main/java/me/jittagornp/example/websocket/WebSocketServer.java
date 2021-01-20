@@ -191,7 +191,7 @@ public class WebSocketServer {
                 .toString();
     }
 
-    private void processFrameData(final SocketChannel channel, final WebSocket webSocket, final ByteBuffer byteBuffer) {
+    private void processFrameData(final SocketChannel channel, final WebSocketImpl webSocket, final ByteBuffer byteBuffer) {
         try {
             final List<ByteBuffer> byteBuffers = Collections.singletonList(byteBuffer);
             final List<FrameData> frames = converter.convertToFrameData(byteBuffers);
@@ -204,7 +204,7 @@ public class WebSocketServer {
         }
     }
 
-    private ByteBuffer readByteBuffer(final SocketChannel channel, final WebSocket webSocket) {
+    private ByteBuffer readByteBuffer(final SocketChannel channel, final WebSocketImpl webSocket) {
         ByteBuffer buffer = null;
         try {
             buffer = ByteBufferUtils.read(channel, READ_BUFFER_SIZE).flip();
