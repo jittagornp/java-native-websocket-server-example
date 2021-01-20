@@ -10,7 +10,7 @@ import java.util.List;
 /**
  * @author jitta
  */
-public class MultipleWebSocketHandler implements WebSocketHandler<FrameData> {
+class MultipleWebSocketHandler implements WebSocketHandler<FrameData> {
 
     private List<WebSocketHandler> handlers;
 

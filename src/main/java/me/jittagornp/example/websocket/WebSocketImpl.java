@@ -5,13 +5,12 @@ package me.jittagornp.example.websocket;
 
 import me.jittagornp.example.util.ByteBufferUtils;
 import java.nio.ByteBuffer;
-import java.nio.channels.SocketChannel;
 import java.util.*;
 
 /**
  * @author jitta
  */
-public class WebSocketImpl implements WebSocket {
+class WebSocketImpl implements WebSocket {
 
     private String sessionId;
 

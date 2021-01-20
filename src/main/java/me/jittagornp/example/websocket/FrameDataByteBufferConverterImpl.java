@@ -13,7 +13,7 @@ import static java.util.stream.Collectors.toList;
 /**
  * @author jitta
  */
-public class FrameDataByteBufferConverterImpl implements FrameDataByteBufferConverter {
+class FrameDataByteBufferConverterImpl implements FrameDataByteBufferConverter {
 
     //1000 0000
     private static final byte FIN_BITS = (byte) 0b10000000;

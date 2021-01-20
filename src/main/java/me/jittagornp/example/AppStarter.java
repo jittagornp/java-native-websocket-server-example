@@ -7,7 +7,6 @@ import me.jittagornp.example.websocket.TextWebSocketHandler;
 import me.jittagornp.example.websocket.WebSocket;
 import me.jittagornp.example.websocket.WebSocketHandler;
 import me.jittagornp.example.websocket.WebSocketServer;
-
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 
