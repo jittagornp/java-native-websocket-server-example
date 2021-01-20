@@ -172,10 +172,6 @@ public class WebSocketServer {
 
     private String getSecWebSocketKey(final ByteBuffer byteBuffer) {
         final String text = new String(byteBuffer.array(), StandardCharsets.UTF_8);
-        if (text.isEmpty()) {
-            return null;
-        }
-
         final boolean isHttpGET = text.startsWith("GET /");
         if (!isHttpGET) {
             return null;
