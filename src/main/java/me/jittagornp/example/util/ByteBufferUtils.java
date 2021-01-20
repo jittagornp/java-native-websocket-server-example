@@ -31,20 +31,13 @@ public class ByteBufferUtils {
         final ByteBuffer buffer = ByteBuffer.allocate(bufferSize);
         final List<ByteBuffer> buffers = new ArrayList<>();
         while (true) {
-
-            //Change to Write mode
-            buffer.clear();
-
             //Read data / Write data from channel to byteBuffer
-            int status = channel.read(buffer);
+            int status = channel.read(buffer.clear());
             if (status <= 0) {
                 break;
             }
 
-            //Change to Read mode
-            buffer.flip();
-
-            final boolean hasData = buffer.remaining() > 0;
+            final boolean hasData = buffer.flip().remaining() > 0;
             if (!hasData) {
                 break;
             }

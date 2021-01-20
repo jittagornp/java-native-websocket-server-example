@@ -133,10 +133,7 @@ public class FrameDataByteBufferConverterImpl implements FrameDataByteBufferConv
 
     private ByteBuffer convertToByteBuffer(final FrameData frameData) {
 
-        final ByteBuffer payloadData = frameData.getPayloadData();
-
-        //Change to Read mode
-        payloadData.flip();
+        final ByteBuffer payloadData = frameData.getPayloadData().flip();
 
         //==========================================
         byte firstByte = (byte) 0b00000000;
