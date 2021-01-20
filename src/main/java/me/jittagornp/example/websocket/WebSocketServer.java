@@ -4,9 +4,7 @@
 package me.jittagornp.example.websocket;
 
 import me.jittagornp.example.util.ByteBufferUtils;
-
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -34,13 +32,13 @@ public class WebSocketServer {
 
     private ServerSocketChannel serverSocketChannel;
 
-    private List<WebSocketHandler> webSocketHandlers;
+    private List<WebSocketHandler> handlers;
 
     private MultipleWebSocketHandler handler;
 
     private WebSocketServer(final int port) {
         this.port = port;
-        this.webSocketHandlers = new LinkedList<>();
+        this.handlers = new LinkedList<>();
         this.converter = new FrameDataByteBufferConverterImpl();
     }
 
@@ -49,14 +47,14 @@ public class WebSocketServer {
     }
 
     public WebSocketServer addWebSocketHandler(final WebSocketHandler handler) {
-        this.webSocketHandlers.add(handler);
+        this.handlers.add(handler);
         return this;
     }
 
-    public WebSocketServer setWebSocketHandlers(final List<WebSocketHandler> handlers) {
-        this.webSocketHandlers = handlers;
-        if (this.webSocketHandlers == null) {
-            this.webSocketHandlers = new ArrayList<>();
+    public WebSocketServer setHandlers(final List<WebSocketHandler> handlers) {
+        this.handlers = handlers;
+        if (this.handlers == null) {
+            this.handlers = new ArrayList<>();
         }
         return this;
     }
@@ -65,7 +63,7 @@ public class WebSocketServer {
 
         System.out.println("WebSocketServer started on port " + port);
 
-        handler = new MultipleWebSocketHandler(webSocketHandlers);
+        handler = new MultipleWebSocketHandler(handlers);
 
         //1. Define server channel
         serverSocketChannel = ServerSocketChannel.open();
@@ -145,7 +143,9 @@ public class WebSocketServer {
 
         while (!queue.isEmpty()) {
             try {
+                //Take element from queue
                 final FrameData frameData = queue.poll();
+
                 final List<FrameData> frames = Collections.singletonList(frameData);
                 final List<ByteBuffer> frameBuffers = converter.covertToByteBuffer(frames);
                 for (ByteBuffer frameBuffer : frameBuffers) {
@@ -158,25 +158,22 @@ public class WebSocketServer {
     }
 
     private void doHandShake(final String secWebSocketKey, final WebSocketImpl webSocket) throws IOException, NoSuchAlgorithmException {
+        if (secWebSocketKey != null) {
+            final String response = buildHandshakeResponse(secWebSocketKey);
+            final ByteBuffer byteBuffer = ByteBufferUtils.create(response).flip();
 
-        if (secWebSocketKey == null) {
-            return;
+            webSocket.getChannel().write(byteBuffer);
+            webSocket.setHandshake(true);
+
+            System.out.println("===============================");
+            System.out.println("WebSocket Handshake");
+            System.out.println("Request Sec-WebSocket-Key : " + secWebSocketKey);
+            System.out.println("-------------------------------");
+            System.out.println("Http Response : ");
+            System.out.println(response);
+
+            handler.onConnect(webSocket);
         }
-
-        final String response = buildHandshakeResponse(secWebSocketKey);
-        final ByteBuffer byteBuffer = ByteBufferUtils.create(response).flip();
-
-        webSocket.getChannel().write(byteBuffer);
-        webSocket.setHandshake(true);
-
-        System.out.println("===============================");
-        System.out.println("WebSocket Handshake");
-        System.out.println("Request Sec-WebSocket-Key : " + secWebSocketKey);
-        System.out.println("-------------------------------");
-        System.out.println("Http Response : ");
-        System.out.println(response);
-
-        handler.onConnect(webSocket);
     }
 
     private String getSecWebSocketKey(final ByteBuffer byteBuffer) {
@@ -235,6 +232,6 @@ public class WebSocketServer {
 
     public void stop() throws IOException {
         serverSocketChannel.close();
-        webSocketHandlers.clear();
+        handlers.clear();
     }
 }
