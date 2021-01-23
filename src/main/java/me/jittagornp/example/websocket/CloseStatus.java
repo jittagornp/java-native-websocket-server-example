@@ -8,10 +8,10 @@ package me.jittagornp.example.websocket;
  *
  * @author jitta
  */
-public enum ConnectionClose {
+public enum CloseStatus {
 
     NORMAL(1000, "Normal close"),
-    GOING_AWAY(10001, "Going away"),
+    GOING_AWAY(1001, "Going away"),
     PROTOCOL_ERROR(1002, "Protocol error"),
     REFUSE(1003, "Refuse"),
     NO_STATUS_CODE(1005, "No status code"),
@@ -26,29 +26,37 @@ public enum ConnectionClose {
     BAD_GATEWAY(1014, "Bad gateway"),
     TLS_ERROR(1015, "TLS error");
 
-    private final int statusCode;
+    private final int code;
     private final String reason;
 
-    private ConnectionClose(final int statusCode, final String reason) {
-        this.statusCode = statusCode;
+    private CloseStatus(final int code, final String reason) {
+        this.code = code;
         this.reason = reason;
     }
 
-    public int getStatusCode() {
-        return statusCode;
+    public int getCode() {
+        return code;
     }
 
     public String getReason() {
         return reason;
     }
 
-    public static ConnectionClose fromStatusCode(final int statusCode) {
-        final ConnectionClose[] connectionCloses = values();
-        for (ConnectionClose connectionClose : connectionCloses) {
-            if (connectionClose.getStatusCode() == statusCode) {
-                return connectionClose;
+    public static CloseStatus fromStatusCode(final int code) {
+        final CloseStatus[] closeStatuses = values();
+        for (CloseStatus closeStatus : closeStatuses) {
+            if (closeStatus.getCode() == code) {
+                return closeStatus;
             }
         }
         throw new UnsupportedOperationException("Unknown status code");
+    }
+
+    @Override
+    public String toString() {
+        return "CloseStatus{" +
+                "code=" + code +
+                ", reason='" + reason + '\'' +
+                '}';
     }
 }

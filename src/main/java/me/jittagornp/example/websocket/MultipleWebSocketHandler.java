@@ -3,6 +3,8 @@
  */
 package me.jittagornp.example.websocket;
 
+import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.List;
@@ -50,7 +52,7 @@ class MultipleWebSocketHandler implements WebSocketHandler<FrameData> {
     }
 
     @Override
-    public void onDisconnect(final WebSocket webSocket) {
+    public void onDisconnect(final WebSocket webSocket, final CloseStatus status) {
         handlers.stream()
                 .forEach(handler -> handleConnectionCloseFrame(handler, webSocket, null));
     }
@@ -92,7 +94,7 @@ class MultipleWebSocketHandler implements WebSocketHandler<FrameData> {
         } else if (opcode == Opcode.BINARY_FRAME) {
             handleBinaryFrame(handler, webSocket, frameData);
         } else if (opcode == Opcode.CONNECTION_CLOSE) {
-            handleConnectionCloseFrame(handler, webSocket, frameData);
+            handleConnectionCloseFrame(handler, webSocket, convertToCloseStatus(frameData));
         } else if (opcode == Opcode.PING) {
             handlePingFrame(handler, webSocket, frameData);
         } else if (opcode == Opcode.PONG) {
@@ -142,12 +144,22 @@ class MultipleWebSocketHandler implements WebSocketHandler<FrameData> {
         }
     }
 
-    private void handleConnectionCloseFrame(final WebSocketHandler handler, final WebSocket webSocket, final FrameData frameData) {
+    private void handleConnectionCloseFrame(final WebSocketHandler handler, final WebSocket webSocket, final CloseStatus status) {
         try {
-            handler.onDisconnect(webSocket);
+            handler.onDisconnect(webSocket, status);
         } catch (final Throwable e) {
             handleError(handler, webSocket, e);
         }
+    }
+
+    private CloseStatus convertToCloseStatus(final FrameData frameData) {
+        final ByteBuffer payloadData = frameData.getPayloadData().flip();
+        final byte[] byteArray = payloadData.array();
+        if (byteArray.length == 0) {
+            return CloseStatus.NORMAL;
+        }
+        int statusCode = new BigInteger(byteArray).intValue();
+        return CloseStatus.fromStatusCode(statusCode);
     }
 
     private void handlePingFrame(final WebSocketHandler handler, final WebSocket webSocket, final FrameData frameData) {

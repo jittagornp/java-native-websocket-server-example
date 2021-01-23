@@ -14,6 +14,6 @@ public interface WebSocketHandler<T> {
 
     void onError(final WebSocket webSocket, final Throwable e);
 
-    void onDisconnect(final WebSocket webSocket);
+    void onDisconnect(final WebSocket webSocket, final CloseStatus status);
 
 }

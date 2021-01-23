@@ -3,10 +3,8 @@
  */
 package me.jittagornp.example;
 
-import me.jittagornp.example.websocket.TextWebSocketHandler;
-import me.jittagornp.example.websocket.WebSocket;
-import me.jittagornp.example.websocket.WebSocketHandler;
-import me.jittagornp.example.websocket.WebSocketServer;
+import me.jittagornp.example.websocket.*;
+
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 
@@ -36,8 +34,9 @@ public class AppStarter {
             }
 
             @Override
-            public void onDisconnect(final WebSocket webSocket) {
+            public void onDisconnect(final WebSocket webSocket, final CloseStatus status) {
                 System.out.println("Client disconnected => " + webSocket);
+                System.out.println("Close status => " + status);
             }
         };
 
