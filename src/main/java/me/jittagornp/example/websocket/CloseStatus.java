@@ -42,7 +42,7 @@ public enum CloseStatus {
         return reason;
     }
 
-    public static CloseStatus fromStatusCode(final int code) {
+    public static CloseStatus fromCode(final int code) {
         final CloseStatus[] closeStatuses = values();
         for (CloseStatus closeStatus : closeStatuses) {
             if (closeStatus.getCode() == code) {

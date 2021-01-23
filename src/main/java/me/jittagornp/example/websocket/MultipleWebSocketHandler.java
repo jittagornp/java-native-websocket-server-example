@@ -4,7 +4,6 @@
 package me.jittagornp.example.websocket;
 
 import java.math.BigInteger;
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.List;
@@ -94,7 +93,7 @@ class MultipleWebSocketHandler implements WebSocketHandler<FrameData> {
         } else if (opcode == Opcode.BINARY_FRAME) {
             handleBinaryFrame(handler, webSocket, frameData);
         } else if (opcode == Opcode.CONNECTION_CLOSE) {
-            handleConnectionCloseFrame(handler, webSocket, convertToCloseStatus(frameData));
+            handleConnectionCloseFrame(handler, webSocket, convertToCloseStatus(frameData.getPayloadData().array()));
         } else if (opcode == Opcode.PING) {
             handlePingFrame(handler, webSocket, frameData);
         } else if (opcode == Opcode.PONG) {
@@ -152,14 +151,12 @@ class MultipleWebSocketHandler implements WebSocketHandler<FrameData> {
         }
     }
 
-    private CloseStatus convertToCloseStatus(final FrameData frameData) {
-        final ByteBuffer payloadData = frameData.getPayloadData().flip();
-        final byte[] byteArray = payloadData.array();
+    private CloseStatus convertToCloseStatus(final byte[] byteArray) {
         if (byteArray.length == 0) {
             return CloseStatus.NORMAL;
         }
-        int statusCode = new BigInteger(byteArray).intValue();
-        return CloseStatus.fromStatusCode(statusCode);
+        final int code = new BigInteger(byteArray).intValue();
+        return CloseStatus.fromCode(code);
     }
 
     private void handlePingFrame(final WebSocketHandler handler, final WebSocket webSocket, final FrameData frameData) {
