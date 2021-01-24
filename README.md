@@ -2,6 +2,10 @@
 
 > ตัวอย่างการเขียน WebSocket Server ด้วย Native Java (โดยไม่ใช้ Dependencies ใด ๆ) implement ตามแนวทางของ RFC6455 (The WebSocket Protocol) https://tools.ietf.org/html/rfc6455
 
+# บทความอ้างอิง
+
+- [WebSocket คืออะไร ทำงานยังไง (อธิบายแบบละเอียด)](https://www.jittagornp.me/blog/what-is-websocket/)
+
  # วิธีการใช้งาน 
  
  ให้ run ไฟล์ `AppStarter.java` เพื่อทดสอบดู
